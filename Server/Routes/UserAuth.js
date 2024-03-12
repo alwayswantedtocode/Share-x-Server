@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 
+dotenv.config();
 //Register
 router.post("/register", async (req, res, next) => {
   try {
