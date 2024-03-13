@@ -21,6 +21,10 @@ app.use(morgan("common"));
 app.use(cors());
 app.use(cookie());
 
+// {
+//   origin: "https://share-x-q14a.onrender.com/";
+// }
+
 app.use("/api/users", userRoute);
 app.use("/api/usersauth", authRoute);
 app.use("/api/posts", postRoute);
@@ -28,8 +32,9 @@ app.use("/api/comments", commentRouter);
 
 const startServer = async () => {
   try {
+    const port = process.env.PORT || 5050;
     await mongoose.connect(process.env.MONGO_URL);
-    app.listen(5050, () => {
+    app.listen(port, () => {
       console.log("Server is up and running");
     });
     console.log("Connected to mongodb!");
