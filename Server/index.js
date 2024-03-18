@@ -11,6 +11,7 @@ const cors = require("cors");
 const CorsOption = require("./Config/CorsOption");
 const Credentials = require("./Middleware/Credentials");
 const cookie = require("cookie-parser");
+ const PORT = process.env.PORT || 5050;
 
 const app = express();
 
@@ -31,10 +32,10 @@ app.use("/api/comments", commentRouter);
 
 const startServer = async () => {
   try {
-    const port = process.env.PORT || 5050;
+   
     await mongoose.connect(process.env.MONGO_URL);
-    app.listen(port, () => {
-      console.log("Server is up and running");
+    app.listen(PORT, () => {
+      console.log(`Server up and running on port ${PORT}`);
     });
     console.log("Connected to mongodb!");
   } catch (error) {
