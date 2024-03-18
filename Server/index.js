@@ -8,6 +8,8 @@ const authRoute = require("./Routes/UserAuth");
 const postRoute = require("./Routes/Posts");
 const commentRouter = require("./Routes/comments");
 const cors = require("cors");
+const CorsOption = require("./Config/CorsOption");
+const Credentials = require("./Middleware/Credentials");
 const cookie = require("cookie-parser");
 
 const app = express();
@@ -15,10 +17,11 @@ const app = express();
 dotenv.config();
 
 //middleware
+app.use(Credentials);
+app.use(cors(CorsOption));
 app.use(express.json());
 app.use(helmet());
 app.use(morgan("common"));
-app.use(cors({ origin: "https://share-x-q14a.onrender.com/" }));
 app.use(cookie());
 
 app.use("/api/users", userRoute);
