@@ -40,10 +40,10 @@ router.post("/register", async (req, res, next) => {
 //Login
 router.post("/signIn", async (req, res, next) => {
   try {
-    const user = await User.findOne({
-      $or: [{ email: req.body.email }, { username: req.body.username }],
-    });
+    console.log(" i am in the login ")
+    const user = await User.findOne({ email: req.body.email });
     if (!user) {
+      console.log("I couldnt find a user")
       return res.status(404).json("User not found");
     }
 
