@@ -7,6 +7,14 @@ const postSchema = new Schema(
       type: String,
       required: true,
     },
+    Fullname: {
+      type: String,
+      required: true,
+    },
+    username: {
+      type: String,
+      require: true,
+    },
     Description: {
       type: String,
       max: 1000,
@@ -15,8 +23,12 @@ const postSchema = new Schema(
       type: String,
     },
     Likes: {
-      type: Array,
+      type: [String],
       default: [],
+    },
+    Comments: {
+      type: String,
+      max: 1000,
     },
   },
   { timestamps: true }
