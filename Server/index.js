@@ -32,27 +32,6 @@ app.use(cookie());
 app.use("/api/users", userRouters);
 app.use("/api/usersauth", authRouters);
 app.use("/api/posts", postRouters);
-// app.use("/api/comments", commentRouter);
-// app.use("/api/usersauth", loginRouter);
-// app.use("/api/usersauth", registerRouter);
-
-// app.use("/api/posts", postRouter);
-// app.use("/api/posts", timelineRouter);
-// app.use("/api/posts", userPostRouter);
-// app.use("/api/posts", updatePostRouter);
-// app.use("/api/posts", likeRouter);
-// app.use("/api/posts", getPostRouter);
-// app.use("/api/posts", deletePostRouter);
-
-// app.use("/api/users", searchUsersRouter);
-// app.use("/api/users", deleteUserRoute);
-// app.use("/api/users", followUserRoute);
-// app.use("/api/users", unFollowUserRoute);
-// app.use("/api/users", getFollowingsRouter);
-// app.use("/api/users", getFollowersRouter);
-// app.use("/api/users", updateUserRoute);
-// app.use("/api/users", verifyTokenrRoute);
-// app.use("/api/users", verifyAdminrRoute);
 
 
 const startServer = async () => {

@@ -38,9 +38,6 @@ const register = async (req, res, next) => {
   }
 };
 
-
-
-
 const login = async (req, res, next) => {
   try {
     console.log(" i am in the login ");
@@ -86,9 +83,16 @@ const login = async (req, res, next) => {
   }
 };
 
+const logout = async (req, res) => {
+  try {
+    res.clearCookie("access_token");
+    res.clearCookie("refresh_token");
+    res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.error("Logout failed:", error);
+    res.status(500).json({ message: "Logout failed" });
+    next(error);
+  }
+};
 
-
-
-
-
-module.exports = { register, login };
+module.exports = { register, login,logout };
