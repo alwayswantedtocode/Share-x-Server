@@ -8,7 +8,6 @@ dotenv.config();
 const register = async (req, res, next) => {
   try {
     // Check if the user already exists
-    console.log("i am in the register");
     const existingUser = await User.findOne({
       //   $or: [{ email: req.body.email }, { username: req.body.username }],
       email: req.body.email,
@@ -40,7 +39,6 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    console.log(" i am in the login ");
     // const {username, password, email}=req.body
     const user = await User.findOne({ email: req.body.email });
     if (!user) {

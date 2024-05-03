@@ -11,6 +11,14 @@ const commentSchema = new Schema(
       type: String,
       required: true,
     },
+    username: {
+      type: String,
+      require: true,
+    },
+    profilePicture: {
+      type: String,
+      default: "",
+    },
     comments: {
       type: String,
       max: 1000,
@@ -23,5 +31,5 @@ const commentSchema = new Schema(
   { timestamps: true }
 );
 
-const commenttData = mongoose.model("commenttData", commentSchema);
-module.exports = commenttData;
+const commentData = mongoose.model("commentData", commentSchema);
+module.exports = commentData;

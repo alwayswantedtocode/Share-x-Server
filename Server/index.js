@@ -3,15 +3,14 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const userRouters = require("./Routes/UserRouter/userRouters");
-const authRouters = require("./Routes/AuthRouter/authRouters");
-const postRouters = require("./Routes/PostRouter/postRouters");
-const commentRouter = require("./Routes/comments");
 const cors = require("cors");
 const CorsOption = require("./Config/CorsOption");
 const Credentials = require("./Middleware/Credentials");
 const cookie = require("cookie-parser");
-
+const userRouters = require("./Routes/UserRouter/userRouters");
+const authRouters = require("./Routes/AuthRouter/authRouters");
+const postRouters = require("./Routes/PostRouter/postRouters");
+const commentRouters = require("./Routes/CommentRouter/commentRouter");
 const verifyTokenrRoute = require("./Routes/UserRouter/verifyTokenRouter");
 const verifyAdminrRoute = require("./Routes/UserRouter/verifyAdminRouter");
 
@@ -23,7 +22,7 @@ dotenv.config();
 
 //middleware
 app.use(Credentials);
-app.use(cors(CorsOption ));
+app.use(cors(CorsOption));
 app.use(express.json());
 app.use(helmet());
 app.use(morgan("common"));
@@ -32,7 +31,7 @@ app.use(cookie());
 app.use("/api/users", userRouters);
 app.use("/api/usersauth", authRouters);
 app.use("/api/posts", postRouters);
-
+app.use("/api/comments", commentRouters);
 
 const startServer = async () => {
   try {

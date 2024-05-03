@@ -15,6 +15,10 @@ const postSchema = new Schema(
       type: String,
       require: true,
     },
+    profilePicture: {
+      type: String,
+      default: "",
+    },
     Description: {
       type: String,
       max: 1000,
@@ -25,10 +29,6 @@ const postSchema = new Schema(
     Likes: {
       type: [String],
       default: [],
-    },
-    Comments: {
-      type: String,
-      max: 1000,
     },
   },
   { timestamps: true }

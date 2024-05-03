@@ -53,6 +53,7 @@ const searchForUsers = async (req, res, next) => {
       $or: [
         { username: { $regex: new RegExp(query, "i") } },
         { Fullname: { $regex: new RegExp(query, "i") } },
+        
       ],
     });
     const sanitizedUsers = user.map((User) => {
