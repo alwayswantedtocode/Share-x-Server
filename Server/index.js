@@ -10,7 +10,6 @@ const cookie = require("cookie-parser");
 const userRouters = require("./Routes/UserRouter/userRouters");
 const authRouters = require("./Routes/AuthRouter/authRouters");
 const postRouters = require("./Routes/PostRouter/postRouters");
-const commentRouters = require("./Routes/CommentRouter/commentRouter");
 const verifyTokenrRoute = require("./Routes/UserRouter/verifyTokenRouter");
 const verifyAdminrRoute = require("./Routes/UserRouter/verifyAdminRouter");
 
@@ -31,7 +30,6 @@ app.use(cookie());
 app.use("/api/users", userRouters);
 app.use("/api/usersauth", authRouters);
 app.use("/api/posts", postRouters);
-app.use("/api/comments", commentRouters);
 
 const startServer = async () => {
   try {

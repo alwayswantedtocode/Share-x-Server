@@ -108,6 +108,118 @@ const deletePost = async (req, res) => {
   }
 };
 
+const addComment = async (req, res) => {
+  try {
+    const { userId, username, profilePicture, comments } = req.body;
+    const { postId } = req.params;
+
+    if (!userId || !username || !comments) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Check for if post exist
+    const existingPost = await Post.findById(postId);
+    if (!existingPost) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    // Check if comment has been said before
+    const existingComment = existingPost.Comments.find(
+      (comment) => comment.userId === userId && comment.comments === comments
+    );
+    if (existingComment) {
+      return res.status(409).json({ message: "You said this already!" });
+    }
+
+    existingPost.Comments.push({
+      userId,
+      username,
+      profilePicture,
+      comments,
+    });
+
+    const savedComments = await existingPost.save();
+    console.log(savedComments);
+    res.status(200).json(savedComments);
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+};
+
+const getAllComments = async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const post = await Post.findById(postId).select("Comments");
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.status(200).json(post.Comments);
+  } catch (error) {
+    console.error("Error getting comments:", error);
+    return res.status(500).json({ error: "Error getting comments" });
+  }
+};
+
+const likedislikeComments = async (req, res) => {
+  const { postId, commentId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const comment = post.Comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    if (!comment.Likes.includes(userId)) {
+      comment.Likes.push(userId);
+      await post.save();
+      res.status(200).json("Comment has been liked");
+    } else {
+      comment.Likes = comment.Likes.filter((id) => id !== userId);
+      await post.save();
+      res.status(200).json("Comment has been unliked");
+    }
+  } catch (error) {
+    console.error("Error liking/disliking comment:", error);
+    return res.status(500).json({ error: "Error liking/disliking comment" });
+  }
+};
+
+const updateComments = async (req, res) => {
+  const { commentId } = req.params;
+  try {
+    const comment = await Comment.findById(req.params.id);
+    if (comment.userId === req.body.userId) {
+      await comment.updateOne({ $set: req.body });
+      res.status(200).json("The comment has been updated");
+    } else {
+      res.status(403).json("you can only update your comment");
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update comment" });
+  }
+};
+const deleteComment = async (req, res) => {
+  const { commentId } = req.params;
+  try {
+    const comment = await Comment.findById(req.params.id);
+    if (comment.userId === req.body.userId) {
+      await comment.deleteOne();
+      res.status(200).json("The comment has been deleted");
+    } else {
+      res.status(403).json("you can only delete your comment");
+    }
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+};
+
 module.exports = {
   createPost,
   updatePosts,
@@ -116,4 +228,7 @@ module.exports = {
   profilePosts,
   likedislikePost,
   deletePost,
+  addComment,
+  getAllComments,
+  likedislikeComments,
 };
