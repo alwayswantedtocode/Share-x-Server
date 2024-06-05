@@ -33,15 +33,57 @@ const createPost = async (req, res) => {
 
 const updatePosts = async (req, res) => {
   try {
+    const { Fullname, username, Description, Image, profilePicture } = req.body;
+    const userId = req.query.userId;
+
+    // || req.params.userId
+    if (!userId) {
+      return res.status(400).json("User ID is required");
+    }
+
+    // Find the current user and the post
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return res.status(404).json("User not found");
+    }
+    // const
     const post = await Post.findById(req.params.id);
-    if (post.userId === req.body.userId) {
-      await post.updateOne({ $set: req.body });
-      res.status(200).json("The post has been updated");
+    if (!post) {
+      return res.status(404).json("Post not found");
+    }
+
+    const currentUserId = currentUser._id.toString();
+    const postUserId = post.userId.toString();
+
+    if (postUserId === currentUserId) {
+      const updateData = {
+        userId: currentUserId,
+        profilePicture,
+        Fullname,
+        username,
+        Description,
+        Image,
+      };
+
+      const updatedPost = await Post.findByIdAndUpdate(
+        req.params.id,
+        { $set: updateData },
+        { new: true }
+      );
+      if (!updatedPost) {
+        console.error("Post not updated");
+        return res.status(500).json({ message: "Post update failed" });
+      }
+
+      res.status(200).json(updatedPost);
     } else {
-      res.status(403).json("you can only update your post");
+      res.status(403).json("You can only update your post");
     }
   } catch (error) {
-    return res.status(500).json(error);
+    console.error("Error updating post:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while updating the post", error });
   }
 };
 
@@ -94,12 +136,45 @@ const likedislikePost = async (req, res) => {
   }
 };
 
+// const deletePost = async (req, res) => {
+//   try {
+//     const post = await Post.findById(req.params.id);
+//     if (post.userId === req.body.userId) {
+//       await post.deleteOne();
+//       // await.post.findByIdAndDelete()
+//       res.status(200).json("The post has been deleted");
+//     } else {
+//       res.status(403).json("you can only delete your post");
+//     }
+//   } catch (error) {
+//     return res.status(500).json(error);
+//   }
+// };
+
 const deletePost = async (req, res) => {
   try {
+    const userId = req.query.userId;
+    if (!userId) {
+      return res.status(400).json("User ID is required");
+    }
+    console.log("userId:", userId);
+    // Find the current user and the post
+    const currentUser = await User.findById(userId);
+    if (!currentUser) {
+      return res.status(404).json("User not found");
+    }
+    console.log("currentUser:", currentUser);
     const post = await Post.findById(req.params.id);
-    if (post.userId === req.body.userId) {
-      await post.deleteOne();
-      res.status(200).json("The post has been deleted");
+    if (!post) {
+      return res.status(404).json("Post not found");
+    }
+    console.log("post:", post);
+    const currentUserId = currentUser._id.toString();
+    const postUserId = post.userId.toString();
+
+    if (postUserId === currentUserId) {
+      const deletePost = await Post.findByIdAndDelete(req.params.id);
+      res.status(200).json(deletePost);
     } else {
       res.status(403).json("you can only delete your post");
     }
@@ -138,7 +213,6 @@ const addComment = async (req, res) => {
     });
 
     const savedComments = await existingPost.save();
-    console.log(savedComments);
     res.status(200).json(savedComments);
   } catch (error) {
     return res.status(500).json(error);
@@ -192,19 +266,32 @@ const likedislikeComments = async (req, res) => {
 };
 
 const updateComments = async (req, res) => {
-  const { commentId } = req.params;
+  const { postId, commentId } = req.params;
+  const { userId, comments } = req.body;
+
   try {
-    const comment = await Comment.findById(req.params.id);
-    if (comment.userId === req.body.userId) {
-      await comment.updateOne({ $set: req.body });
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const comment = post.Comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    if (comment.userId.toString() === userId) {
+      comment.comments = comments;
+      await post.save();
       res.status(200).json("The comment has been updated");
     } else {
-      res.status(403).json("you can only update your comment");
+      res.status(403).json("You can only update your comment");
     }
   } catch (error) {
     res.status(500).json({ error: "Failed to update comment" });
   }
 };
+
 const deleteComment = async (req, res) => {
   const { commentId } = req.params;
   try {
@@ -231,4 +318,5 @@ module.exports = {
   addComment,
   getAllComments,
   likedislikeComments,
+  updateComments,
 };

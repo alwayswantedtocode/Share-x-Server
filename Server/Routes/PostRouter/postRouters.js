@@ -10,6 +10,7 @@ const {
   addComment,
   getAllComments,
   likedislikeComments,
+  updateComments,
 } = require("../../controllers/PostController/postControllers");
 
 postRouters.post("/", createPost);
@@ -22,5 +23,6 @@ postRouters.delete("/:id", deletePost);
 postRouters.post("/:postId/comments", addComment);
 postRouters.get("/:postId/comments", getAllComments);
 postRouters.put("/:postId/comments/:commentId/like", likedislikeComments);
+postRouters.put("/:postId/comments/:commentId", updateComments);
 
 module.exports = postRouters;
