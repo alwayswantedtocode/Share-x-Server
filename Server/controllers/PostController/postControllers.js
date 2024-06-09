@@ -157,18 +157,18 @@ const deletePost = async (req, res) => {
     if (!userId) {
       return res.status(400).json("User ID is required");
     }
-    console.log("userId:", userId);
+
     // Find the current user and the post
     const currentUser = await User.findById(userId);
     if (!currentUser) {
       return res.status(404).json("User not found");
     }
-    console.log("currentUser:", currentUser);
+
     const post = await Post.findById(req.params.id);
     if (!post) {
       return res.status(404).json("Post not found");
     }
-    console.log("post:", post);
+
     const currentUserId = currentUser._id.toString();
     const postUserId = post.userId.toString();
 
