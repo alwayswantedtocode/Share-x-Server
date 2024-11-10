@@ -7,10 +7,9 @@ const createPost = async (req, res) => {
     const { userId, Fullname, username, Description, Image, profilePicture } =
       req.body;
     // Check for required fields
-    if (!userId || !Fullname || !username || !Description) {
+    if (!userId || !Fullname || !username ) {
       return res.status(400).json({ message: "Missing required fields" });
     }
-
     // Check if the post is a duplicate
     const existingPost = await Post.findOne({
       userId,
@@ -20,7 +19,6 @@ const createPost = async (req, res) => {
     if (existingPost) {
       return res.status(409).json({ message: "You said this already!" });
     }
-
     // Create a new post
     const newPost = new Post({
       userId,
