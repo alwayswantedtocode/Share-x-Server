@@ -1,5 +1,49 @@
+
+
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+
+const notificationSchema = new Schema(
+  {
+    type: {
+      type: String,
+      enum: [
+        "new_follower",
+        "new_post",
+        "post_like",
+        "post_comment",
+        "like_comment",
+        "profile_update"
+      ],
+      required: true,
+    },
+    senderId: {
+      type: String,
+      ref: "userData", // The user who triggered the notification
+    },
+    postId: {
+      type: String,
+      ref: "postData", // Optional: The post related to the notification
+    },
+    commentId: {
+      type: String,
+      ref: "Comment", // Optional: The comment related to the notification
+    },
+    senderImage: {
+      type: String,
+      ref: "Image", // Optional: The comment related to the notification
+    },
+    message: {
+      type: String,
+      required: true,
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+);
 
 const userSchema = new Schema(
   {
@@ -76,6 +120,7 @@ const userSchema = new Schema(
       type: String,
       default: "",
     },
+    notifications: [notificationSchema], // Array of notifications
   },
   { timestamps: true }
 );

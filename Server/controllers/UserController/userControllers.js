@@ -1,5 +1,6 @@
 const User = require("../../Models/UsersSchema");
 
+// Update account
 const updateUser = async (req, res, next) => {
   try {
     const {
@@ -17,8 +18,9 @@ const updateUser = async (req, res, next) => {
     } = req.body;
 
     // Update user in database with the received data and uploaded image URLs
+    const userId = req.params.id;
     const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
+      userId,
       {
         $set: {
           Fullname,
@@ -38,13 +40,30 @@ const updateUser = async (req, res, next) => {
     );
 
     const { password, ...otherDetails } = updatedUser._doc;
+    // Notify followers of new post
+    const user = await User.findById(userId);
+    const notificationMessage = `${Fullname} has update their profile.`;
+    await Promise.all(
+      user.followers.map(async (followerId) => {
+        await User.findByIdAndUpdate(followerId, {
+          $push: {
+            notifications: {
+              type: "profile_update",
+              senderId: userId,
+              senderImage: user.profilePicture,
+              message: notificationMessage,
+            },
+          },
+        });
+      })
+    );
     res.status(200).json({ ...otherDetails });
   } catch (error) {
     console.error("Error updating user:", error);
     return res.status(500).json({ error: "Error updating user" });
   }
 };
-
+// Search for user
 const searchForUsers = async (req, res, next) => {
   let { query } = req.query;
 
@@ -67,6 +86,8 @@ const searchForUsers = async (req, res, next) => {
   }
 };
 
+
+//Fetch user profile
 const getUsersProfile = async (req, res) => {
   const userId = req.query.userId;
   const username = req.query.username;
@@ -81,6 +102,7 @@ const getUsersProfile = async (req, res) => {
   }
 };
 
+// Delete Account
 const deleteUser = async (req, res, next) => {
   if (req.body.userId === req.params.id || req.body.isAdmin) {
     try {
@@ -94,6 +116,7 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+// Follow User
 const followUser = async (req, res, next) => {
   if (req.body.userId !== req.params.id) {
     try {
@@ -108,6 +131,18 @@ const followUser = async (req, res, next) => {
       } else {
         res.status(403).json("you already follow this user");
       }
+
+      // Create a notification
+      const notificationMessage = `${currentUser.username} started following you.`;
+      await user.updateOne({
+        $push: {
+          notifications: {
+            type: "new_follower",
+            userId: req.body.userId,
+            message: notificationMessage,
+          },
+        },
+      });
     } catch (error) {
       return res.status(500).json(error);
     }
@@ -116,6 +151,7 @@ const followUser = async (req, res, next) => {
   }
 };
 
+// Unfollow user
 const unfollowUser = async (req, res, next) => {
   if (req.body.userId !== req.params.id) {
     try {
@@ -135,7 +171,7 @@ const unfollowUser = async (req, res, next) => {
     res.status(403).json("you can't unfolllow yourself");
   }
 };
-
+//Get the array of user followers
 const getFollowers = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
@@ -154,7 +190,7 @@ const getFollowers = async (req, res) => {
     res.status(500).json(err);
   }
 };
-
+//Get the array of user followings
 const getFollowings = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
@@ -174,6 +210,8 @@ const getFollowings = async (req, res) => {
   }
 };
 
+
+
 module.exports = {
   updateUser,
   searchForUsers,
@@ -183,4 +221,5 @@ module.exports = {
   unfollowUser,
   getFollowers,
   getFollowings,
+ 
 };
