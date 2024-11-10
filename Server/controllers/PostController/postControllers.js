@@ -334,14 +334,14 @@ const likedislikeComments = async (req, res) => {
       await post.save();
       // Notify the comment owner if they are not the one liking
       const currentUser = await User.findById(userObjectId);
-      if (comment.userId !== userObjectId) {
+      if (comment.userId !== userId) {
         await User.findByIdAndUpdate(comment.userId, {
           $push: {
             notifications: {
               type: "like_comment",
               senderId: userId,
               postId: postId,
-              senderImage:currentUser.profilePicture,
+              senderImage: currentUser.profilePicture,
               message: `${currentUser.Fullname} liked your comment on ${post.Fullname} post.`,
             },
           },
