@@ -7,7 +7,7 @@ const createPost = async (req, res) => {
     const { userId, Fullname, username, Description, Image, profilePicture } =
       req.body;
     // Check for required fields
-    if (!userId || !Fullname || !username ) {
+    if (!userId || !username ) {
       return res.status(400).json({ message: "Missing required fields" });
     }
     // Check if the post is a duplicate
@@ -29,7 +29,6 @@ const createPost = async (req, res) => {
       Image,
     });
 
-    // Save the new post
     const savedPost = await newPost.save();
     res.status(200).json(savedPost);
 
