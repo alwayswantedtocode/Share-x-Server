@@ -7,10 +7,6 @@ const commentSchema = new Schema(
       type: String,
       required: true,
     },
-    // postId: {
-    //   type: String,
-    //   required: true,
-    // },
     username: {
       type: String,
       require: true,
