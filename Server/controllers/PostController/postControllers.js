@@ -7,7 +7,7 @@ const createPost = async (req, res) => {
     const { userId, Fullname, username, Description, Image, profilePicture } =
       req.body;
     // Check for required fields
-    if (!userId || !username ) {
+    if (!userId || !username) {
       return res.status(400).json({ message: "Missing required fields" });
     }
     // Check if the post is a duplicate
@@ -43,7 +43,7 @@ const createPost = async (req, res) => {
               type: "new_post",
               senderId: userId,
               postId: savedPost._id,
-              senderImage:savedPost.profilePicture,
+              senderImage: savedPost.profilePicture,
               message: notificationMessage,
             },
           },
@@ -175,7 +175,7 @@ const likedislikePost = async (req, res) => {
               type: "post_like",
               senderId: userObjectId,
               postId: postObjectId,
-              senderImage:currentUser.profilePicture,
+              senderImage: currentUser.profilePicture,
               message: notificationMessage,
             },
           },
@@ -261,16 +261,19 @@ const addComment = async (req, res) => {
     const savedComments = await existingPost.save();
 
     // Notify post owner
-    const notificationMessage = `${savedComments.Fullname} commented on your post.`;
-    if (existingPost.userId.toString() !== userId.toString()) {
+    const currentUser = await User.findById(userId);
+    if (
+      existingPost.userId &&
+      existingPost.userId.toString() !== userId.toString()
+    ) {
       await User.findByIdAndUpdate(existingPost.userId, {
         $push: {
           notifications: {
             type: "post_comment",
             senderId: userId,
             postId: postId,
-            senderImage:savedComments.profilePicture,
-            message: notificationMessage,
+            senderImage: profilePicture,
+            message: `${currentUser.Fullname} commented on your post.`,
           },
         },
       });
