@@ -4,8 +4,15 @@ const mongoose = require("mongoose");
 
 const createPost = async (req, res) => {
   try {
-    const { userId, Fullname, username, Description, Image, profilePicture } =
-      req.body;
+    const {
+      userId,
+      Fullname,
+      username,
+      Description,
+      Media,
+      MediaType,
+      profilePicture,
+    } = req.body;
     // Check for required fields
     if (!userId || !username) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -26,7 +33,8 @@ const createPost = async (req, res) => {
       Fullname,
       username,
       Description,
-      Image,
+      Media,
+      MediaType,
     });
 
     const savedPost = await newPost.save();
@@ -58,7 +66,14 @@ const createPost = async (req, res) => {
 
 const updatePosts = async (req, res) => {
   try {
-    const { Fullname, username, Description, Image, profilePicture } = req.body;
+    const {
+      Fullname,
+      username,
+      Description,
+      Media,
+      MediaType,
+      profilePicture,
+    } = req.body;
     const userId = req.query.userId;
 
     // || req.params.userId
@@ -87,7 +102,8 @@ const updatePosts = async (req, res) => {
         Fullname,
         username,
         Description,
-        Image,
+        Media,
+        MediaType,
       };
 
       const updatedPost = await Post.findByIdAndUpdate(
@@ -151,7 +167,6 @@ const likedislikePost = async (req, res) => {
     const { userId } = req.body;
     const postId = req.params.id;
 
-    // Convert userId and postId to ObjectId
     const userObjectId = new mongoose.Types.ObjectId(userId);
     const postObjectId = new mongoose.Types.ObjectId(postId);
 
@@ -160,13 +175,18 @@ const likedislikePost = async (req, res) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
+    const currentUser = await User.findById(userObjectId);
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let message;
+
     if (!post.Likes.includes(userObjectId)) {
-      // Like the post
       await post.updateOne({ $push: { Likes: userObjectId } });
-      res.status(200).json("Post has been liked");
+      message = "Post has been liked";
 
       // Notify post owner of the like
-      const currentUser = await User.findById(userObjectId);
       const notificationMessage = `${currentUser.Fullname} liked your post.`;
       if (post.userId.toString() !== userId) {
         await User.findByIdAndUpdate(post.userId, {
@@ -182,10 +202,16 @@ const likedislikePost = async (req, res) => {
         });
       }
     } else {
-      // Unlike the post
       await post.updateOne({ $pull: { Likes: userObjectId } });
-      res.status(200).json("Post has been unliked");
+      message = "Post has been unliked";
     }
+    const updatedPost = await Post.findById(postObjectId);
+    const likesCount = updatedPost.Likes.length;
+
+    res.status(200).json({
+      message,
+      likes: likesCount,
+    });
   } catch (error) {
     console.error("Error liking/unliking post:", error);
     return res.status(500).json({ error: "Error liking/unliking post" });
@@ -229,18 +255,15 @@ const addComment = async (req, res) => {
     const { userId, username, profilePicture, comments } = req.body;
     const { postId } = req.params;
 
-    // Ensure all required fields are present
     if (!userId || !username || !comments) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Check if post exists
     const existingPost = await Post.findById(postId);
     if (!existingPost) {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    // Check if comment has already been made
     const existingComment = existingPost.Comments.find(
       (comment) =>
         comment.userId.toString() === userId.toString() &&
@@ -250,14 +273,12 @@ const addComment = async (req, res) => {
       return res.status(409).json({ message: "You said this already!" });
     }
 
-    // Add the new comment
     existingPost.Comments.push({
-      userId: new mongoose.Types.ObjectId(userId), // Ensure userId is an ObjectId
+      userId: new mongoose.Types.ObjectId(userId), 
       username,
       profilePicture,
       comments,
     });
-
     const savedComments = await existingPost.save();
 
     // Notify post owner
@@ -278,8 +299,9 @@ const addComment = async (req, res) => {
         },
       });
     }
-
-    res.status(200).json(savedComments);
+    res
+      .status(200)
+      .json(existingPost.Comments[existingPost.Comments.length - 1]);
   } catch (error) {
     console.error("Error adding comment:", error);
     return res.status(500).json({ message: "Internal server error", error });
@@ -303,26 +325,14 @@ const getAllComments = async (req, res) => {
 };
 
 const likedislikeComments = async (req, res) => {
+ try {
   const { postId, commentId } = req.params;
   const { userId } = req.body;
 
-  if (
-    !mongoose.Types.ObjectId.isValid(postId) ||
-    !mongoose.Types.ObjectId.isValid(commentId) ||
-    !mongoose.Types.ObjectId.isValid(userId)
-  ) {
-    return res
-      .status(400)
-      .json({ message: "Invalid postId, commentId, or userId" });
-  }
-  // Convert userId and postId to ObjectId
-  const userObjectId = new mongoose.Types.ObjectId(userId);
-  const postObjectId = new mongoose.Types.ObjectId(postId);
-
-  try {
-    const post = await Post.findById(postObjectId);
+    const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
+      
     }
 
     const comment = post.Comments.id(commentId);
@@ -330,36 +340,49 @@ const likedislikeComments = async (req, res) => {
       return res.status(404).json({ message: "Comment not found" });
     }
 
-    // Like or unlike the comment
-    if (!comment.Likes.includes(userId)) {
-      comment.Likes.push(userId);
-      await post.save();
-      // Notify the comment owner if they are not the one liking
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const isLiked = comment.Likes.some((id) => id === userId);
+
+    let message;
+
+    if (!isLiked) {
+      // Like the comment
+      comment.Likes.push(userObjectId);
+      message = "Comment has been liked";
+
+      // Notify the comment owner
       const currentUser = await User.findById(userObjectId);
-      if (comment.userId !== userId) {
+      if (comment.userId.toString() !== userId) {
         await User.findByIdAndUpdate(comment.userId, {
           $push: {
             notifications: {
               type: "like_comment",
               senderId: userId,
-              postId: postId,
+              postId,
               senderImage: currentUser.profilePicture,
-              message: `${currentUser.Fullname} liked your comment on ${post.Fullname} post.`,
+              message: `${currentUser.Fullname} liked your comment on ${post.Fullname}'s post.`,
             },
           },
         });
       }
-      res.status(200).json("Comment has been liked");
     } else {
+      // Unlike the comment
       comment.Likes = comment.Likes.filter((id) => id !== userId);
-      await post.save();
-      res.status(200).json("Comment has been unliked");
+      message = "Comment has been unliked";
     }
+
+    // Save the post with the updated comment
+    await post.save();
+
+    const likesCount = comment.Likes.length;
+
+    res.status(200).json({ message, likes: likesCount });
   } catch (error) {
     console.error("Error liking/disliking comment:", error);
-    return res.status(500).json({ error: "Error liking/disliking comment" });
+    res.status(500).json({ error: "Error liking/disliking comment" });
   }
 };
+
 
 const updateComments = async (req, res) => {
   const { postId, commentId } = req.params;
