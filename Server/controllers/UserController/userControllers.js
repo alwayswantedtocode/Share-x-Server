@@ -86,7 +86,6 @@ const searchForUsers = async (req, res, next) => {
   }
 };
 
-
 //Fetch user profile
 const getUsersProfile = async (req, res) => {
   const userId = req.query.userId;
@@ -116,61 +115,115 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-// Follow User
-const followUser = async (req, res, next) => {
-  if (req.body.userId !== req.params.id) {
-    try {
-      const user = await User.findById(req.params.id);
-      const currentUser = await User.findById(req.body.userId);
-      if (!user.followers.includes(req.body.userId)) {
-        await user.updateOne({ $push: { followers: req.body.userId } });
-        await currentUser.updateOne({
-          $push: { followings: req.params.id },
-        });
-        res.status(200).json("User have followed user");
-      } else {
-        res.status(403).json("you already follow this user");
-      }
+//follow user
+const followUser = async (req, res) => {
+  const { accountUserId } = req.body; // Current user
+  const friendUserId = req.params.id; // User being followed
 
-      // Create a notification
-      const notificationMessage = `${currentUser.username} started following you.`;
-      await user.updateOne({
-        $push: {
-          notifications: {
-            type: "new_follower",
-            userId: req.body.userId,
-            message: notificationMessage,
-          },
-        },
-      });
-    } catch (error) {
-      return res.status(500).json(error);
+  if (accountUserId === friendUserId) {
+    return res.status(403).json({ error: "You cannot follow yourself." });
+  }
+
+  try {
+    const user = await User.findById(friendUserId);
+    const currentUser = await User.findById(accountUserId);
+
+    if (!user || !currentUser) {
+      return res.status(404).json({ error: "User not found." });
     }
-  } else {
-    res.status(403).json("you can't folllow yourself");
+
+    // If already following
+    if (user.followers.includes(accountUserId)) {
+      return res.status(403).json({ error: "You already follow this user." });
+    }
+
+    await user.updateOne({ $push: { followers: accountUserId } });
+    await currentUser.updateOne({ $push: { followings: friendUserId } });
+
+    // Create a notification
+    const notificationMessage = `${currentUser.username} started following you.`;
+    await user.updateOne({
+      $push: {
+        notifications: {
+          type: "new_follower",
+          senderId: accountUserId,
+          message: notificationMessage,
+        },
+      },
+    });
+
+    const updatedCurrentUser = await User.findById(accountUserId);
+    const updatedUser = await User.findById(friendUserId);
+
+    res.status(200).json({
+      message: "Successfully followed the user.",
+      updatedCounts: {
+        currentUser: {
+          followingsCount: updatedCurrentUser.followings.length,
+          followersCount: updatedCurrentUser.followers.length,
+        },
+        friendUser: {
+          followingsCount: updatedUser.followings.length,
+          followersCount: updatedUser.followers.length,
+        },
+      },
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "An error occurred while following the user." });
   }
 };
 
 // Unfollow user
-const unfollowUser = async (req, res, next) => {
-  if (req.body.userId !== req.params.id) {
-    try {
-      const user = await User.findById(req.params.id);
-      const currentUser = await User.findById(req.body.userId);
-      if (user.followers.includes(req.body.userId)) {
-        await user.updateOne({ $pull: { followers: req.body.userId } });
-        await currentUser.updateOne({ $pull: { followings: req.body.id } });
-        res.status(200).json("User have unfollowed user");
-      } else {
-        res.status(403).json("you don't follow this user");
-      }
-    } catch (error) {
-      return res.status(500).json(error);
+const unfollowUser = async (req, res) => {
+  const { accountUserId } = req.body; // Current user
+  const friendUserId = req.params.id; // User being unfollowed
+
+  if (accountUserId === friendUserId) {
+    return res.status(403).json({ error: "You cannot unfollow yourself." });
+  }
+
+  try {
+    const user = await User.findById(friendUserId);
+    const currentUser = await User.findById(accountUserId);
+
+    if (!user || !currentUser) {
+      return res.status(404).json({ error: "User not found." });
     }
-  } else {
-    res.status(403).json("you can't unfolllow yourself");
+
+    if (!user.followers.includes(accountUserId)) {
+      return res
+        .status(403)
+        .json({ error: "You are not following this user." });
+    }
+
+    await user.updateOne({ $pull: { followers: accountUserId } });
+    await currentUser.updateOne({ $pull: { followings: friendUserId } });
+
+    const updatedCurrentUser = await User.findById(accountUserId);
+    const updatedUser = await User.findById(friendUserId);
+
+    res.status(200).json({
+      message: "Successfully unfollowed the user.",
+      updatedCounts: {
+        currentUser: {
+          followingsCount: updatedCurrentUser.followings.length,
+          followersCount: updatedCurrentUser.followers.length,
+        },
+        friendUser: {
+          followingsCount: updatedUser.followings.length,
+          followersCount: updatedUser.followers.length,
+        },
+      },
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "An error occurred while unfollowing the user." });
   }
 };
+
 //Get the array of user followers
 const getFollowers = async (req, res) => {
   try {
@@ -210,8 +263,6 @@ const getFollowings = async (req, res) => {
   }
 };
 
-
-
 module.exports = {
   updateUser,
   searchForUsers,
@@ -221,5 +272,4 @@ module.exports = {
   unfollowUser,
   getFollowers,
   getFollowings,
- 
 };
