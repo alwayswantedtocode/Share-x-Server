@@ -140,14 +140,38 @@ const getPosts = async (req, res) => {
 const timelinePosts = async (req, res) => {
   try {
     const currentUser = await User.findById(req.params.userId);
+
     const userPosts = await Post.find({ userId: currentUser._id });
+
+    const enrichedUserPosts = userPosts.map((post) => {
+      const plainPost = post.toObject(); // Convert to plain JavaScript object
+      return {
+        ...plainPost,
+        userProfilePicture: currentUser.profilePicture,
+        username: currentUser.username,
+      };
+    });
+
     const friendPosts = await Promise.all(
-      currentUser.followings.map((friendId) => {
-        return Post.find({ userId: friendId });
+      currentUser.followings.map(async (friendId) => {
+        const friend = await User.findById(friendId);
+
+        const posts = await Post.find({ userId: friendId });
+        return posts.map((post) => {
+          const plainPost = post.toObject();
+          return {
+            ...plainPost,
+            userProfilePicture: friend.profilePicture,
+            username: friend.username,
+          };
+        });
       })
     );
-    res.status(200).json(userPosts.concat(...friendPosts));
+
+    const timelinePosts = enrichedUserPosts.concat(...friendPosts);
+    res.status(200).json(timelinePosts);
   } catch (err) {
+    console.error(err);
     res.status(500).json(err);
   }
 };
@@ -155,9 +179,22 @@ const timelinePosts = async (req, res) => {
 const profilePosts = async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username });
+
     const posts = await Post.find({ userId: user._id });
-    res.status(200).json(posts);
+
+    const enrichedPosts = posts.map((post) => {
+      const plainPost = post.toObject(); // Convert to plain JavaScript object
+      return {
+        ...plainPost,
+        userProfilePicture: user.profilePicture,
+        username: user.username,
+      };
+    });
+
+    // Send response
+    res.status(200).json(enrichedPosts);
   } catch (err) {
+    console.error(err);
     res.status(500).json(err);
   }
 };
@@ -274,7 +311,7 @@ const addComment = async (req, res) => {
     }
 
     existingPost.Comments.push({
-      userId: new mongoose.Types.ObjectId(userId), 
+      userId: new mongoose.Types.ObjectId(userId),
       username,
       profilePicture,
       comments,
@@ -325,14 +362,13 @@ const getAllComments = async (req, res) => {
 };
 
 const likedislikeComments = async (req, res) => {
- try {
-  const { postId, commentId } = req.params;
-  const { userId } = req.body;
+  try {
+    const { postId, commentId } = req.params;
+    const { userId } = req.body;
 
     const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
-      
     }
 
     const comment = post.Comments.id(commentId);
@@ -382,7 +418,6 @@ const likedislikeComments = async (req, res) => {
     res.status(500).json({ error: "Error liking/disliking comment" });
   }
 };
-
 
 const updateComments = async (req, res) => {
   const { postId, commentId } = req.params;

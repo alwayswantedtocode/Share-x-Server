@@ -23,6 +23,7 @@ const register = async (req, res, next) => {
 
     //create new users
     const newUser = new User({
+      Fullname:req.body.Fullname,
       username: req.body.username,
       email: req.body.email,
       password: hashedPassword,
