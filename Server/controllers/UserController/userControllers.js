@@ -75,8 +75,8 @@ const searchForUsers = async (req, res, next) => {
       ],
     });
     const sanitizedUsers = user.map((User) => {
-      const { _id, username, Fullname } = User;
-      return { _id, username, Fullname };
+      const { _id, username, Fullname, profilePicture } = User;
+      return { _id, username, Fullname, profilePicture };
     });
     res.status(200).json(sanitizedUsers);
     // res.status(200).json(user);
@@ -235,8 +235,8 @@ const getFollowers = async (req, res) => {
     );
     let followersList = [];
     followers.map((follower) => {
-      const { _id, username, profilePicture } = follower;
-      followersList.push({ _id, username, profilePicture });
+      const { _id, Fullname, username, profilePicture } = follower;
+      followersList.push({ _id, Fullname, username, profilePicture });
     });
     res.status(200).json(followersList);
   } catch (err) {
@@ -254,8 +254,8 @@ const getFollowings = async (req, res) => {
     );
     let followingsList = [];
     followings.map((following) => {
-      const { _id, username, profilePicture } = following;
-      followingsList.push({ _id, username, profilePicture });
+      const { _id, Fullname, username, profilePicture } = following;
+      followingsList.push({ _id, Fullname, username, profilePicture });
     });
     res.status(200).json(followingsList);
   } catch (err) {
