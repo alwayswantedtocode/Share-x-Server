@@ -112,8 +112,8 @@ const startServer = async () => {
       // Handle socket events for new posts
       socket.on("newPost", (newPostData) => {
         console.log("New post created:", newPostData);
-        // Broadcast the new post to all users who are following the user that created the post
-        io.emit("newPost", newPostData); // You can also target specific users if needed
+
+        io.emit("newPost", newPostData); 
       });
 
       // Listen for a user joining a room (following a user)
@@ -123,27 +123,26 @@ const startServer = async () => {
       });
 
 //add this cos one stackover flow guy told me esocket event had no room to join
-      socket.on("joinPost", (postId) => {
-        socket.join(postId);
-      });
+     socket.on("joinRoom", (postId) => {
+       socket.join(postId);
+       console.log(`Socket ${socket.id} joined room: ${postId}`);
+     });
 
+     
+     socket.on("leaveRoom", (postId) => {
+       socket.leave(postId);
+       console.log(`Socket ${socket.id} left room: ${postId}`);
+     });
+      
       // Handle socket events for comments
       socket.on("commentOnPost", (postId, commentData) => {
         console.log("Comment posted on post:", postId, commentData);
-        // Broadcast comment event to all users following the post (you need to track followers)
+
         // io.emit(`newComment-${postId}`, commentData);
-        io.to(postId).emit("newComment", { postId, comment: commentData });
+        io.to(postId).emit(`newComment-${postId}`, { postId, commentData });
+        console.log("Broadcasting to room:", postId, { postId, commentData }); // Log
       });
 
-      // Broadcast comment to the specific post room
-      // io.to(postId).emit("newComment", { postId, comment: commentData });
-
-      // Handle socket events for likes
-      // socket.on("likePost", (postId, userId) => {
-      //   console.log("Post liked:", postId, userId);
-      //   // Broadcast like event to all users following the post
-      //   io.emit(`newLike-${postId}`, userId);
-      // });
 
       // Handle post like/dislike events
       postEventEmitter.on("postLiked", ({ postId, userId, action }) => {

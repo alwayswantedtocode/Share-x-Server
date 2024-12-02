@@ -339,7 +339,8 @@ const addComment = async (req, res) => {
 
     existingPost.Comments.push(newComment);
     await existingPost.save();
-    // Emit the new comment to all clients in the post room
+    
+   // Emit the new comment to all clients in the post room
     // if (req.io) {
     //   req.io.to(postId).emit("newComment", { postId, comment: newComment });
     //   console.log("Comment posted on post:", postId, newComment);
