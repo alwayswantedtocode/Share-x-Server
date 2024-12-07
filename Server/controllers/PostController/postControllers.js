@@ -1,6 +1,8 @@
 const Post = require("../../Models/PostSchema");
 const User = require("../../Models/UsersSchema");
 const mongoose = require("mongoose");
+const EventEmitter = require("events");
+const postEventEmitter = new EventEmitter();
 
 const createPost = async (req, res) => {
   try {
@@ -13,6 +15,7 @@ const createPost = async (req, res) => {
       MediaType,
       profilePicture,
     } = req.body;
+    const currentUser = await User.findById(userId);
     // Check for required fields
     if (!userId || !username) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -29,7 +32,7 @@ const createPost = async (req, res) => {
     // Create a new post
     const newPost = new Post({
       userId,
-      profilePicture,
+      profilePicture: currentUser.profilePicture,
       Fullname,
       username,
       Description,
@@ -51,7 +54,7 @@ const createPost = async (req, res) => {
               type: "new_post",
               senderId: userId,
               postId: savedPost._id,
-              senderImage: savedPost.profilePicture,
+              senderImage: currentUser.profilePicture,
               message: notificationMessage,
             },
           },
@@ -98,7 +101,7 @@ const updatePosts = async (req, res) => {
     if (postUserId === currentUserId) {
       const updateData = {
         userId: currentUserId,
-        profilePicture,
+        profilePicture: currentUser.profilePicture,
         Fullname,
         username,
         Description,
@@ -223,6 +226,13 @@ const likedislikePost = async (req, res) => {
       await post.updateOne({ $push: { Likes: userObjectId } });
       message = "Post has been liked";
 
+      // Emit like event for Socket.IO
+      postEventEmitter.emit("postLiked", {
+        postId,
+        userId,
+        action: "liked",
+      });
+
       // Notify post owner of the like
       const notificationMessage = `${currentUser.Fullname} liked your post.`;
       if (post.userId.toString() !== userId) {
@@ -241,13 +251,21 @@ const likedislikePost = async (req, res) => {
     } else {
       await post.updateOne({ $pull: { Likes: userObjectId } });
       message = "Post has been unliked";
+
+      // Emit dislike event for Socket.IO
+      postEventEmitter.emit("postLiked", {
+        postId,
+        userId,
+        action: "disliked",
+      });
     }
     const updatedPost = await Post.findById(postObjectId);
     const likesCount = updatedPost.Likes.length;
-
+    const likesList = updatedPost.Likes;
     res.status(200).json({
       message,
       likes: likesCount,
+      List: likesList,
     });
   } catch (error) {
     console.error("Error liking/unliking post:", error);
@@ -292,6 +310,8 @@ const addComment = async (req, res) => {
     const { userId, username, profilePicture, comments } = req.body;
     const { postId } = req.params;
 
+    const currentUser = await User.findById(userId);
+
     if (!userId || !username || !comments) {
       return res.status(400).json({ message: "Missing required fields" });
     }
@@ -310,16 +330,24 @@ const addComment = async (req, res) => {
       return res.status(409).json({ message: "You said this already!" });
     }
 
-    existingPost.Comments.push({
+    const newComment = {
       userId: new mongoose.Types.ObjectId(userId),
       username,
-      profilePicture,
+      profilePicture: currentUser.profilePicture,
       comments,
-    });
-    const savedComments = await existingPost.save();
+    };
 
+    existingPost.Comments.push(newComment);
+    await existingPost.save();
+    
+   // Emit the new comment to all clients in the post room
+    // if (req.io) {
+    //   req.io.to(postId).emit("newComment", { postId, comment: newComment });
+    //   console.log("Comment posted on post:", postId, newComment);
+    // } else {
+    //   console.error("Socket.io instance (req.io) is not defined.");
+    // }
     // Notify post owner
-    const currentUser = await User.findById(userId);
     if (
       existingPost.userId &&
       existingPost.userId.toString() !== userId.toString()
@@ -330,7 +358,7 @@ const addComment = async (req, res) => {
             type: "post_comment",
             senderId: userId,
             postId: postId,
-            senderImage: profilePicture,
+            senderImage: currentUser.profilePicture,
             message: `${currentUser.Fullname} commented on your post.`,
           },
         },
@@ -473,4 +501,5 @@ module.exports = {
   getAllComments,
   likedislikeComments,
   updateComments,
+  postEventEmitter,
 };
